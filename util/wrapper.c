@@ -11,6 +11,11 @@ void *Malloc(size_t size) {
     return do_Malloc(size);
 }
 
+void *Alloc_array(void **ptr, size_t size, size_t elem_size) {
+    *ptr = Malloc(st_mult(size, elem_size)); // abort on overflow
+    return *ptr;
+}
+
 /* STATIC FUNCTIONS */
 static void check_memory_limit(size_t size) {
     ulong max_memory = 1024 * 1024 * 1024; // 1GB ; completely arbitrary and subject to change
