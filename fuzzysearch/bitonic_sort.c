@@ -1,122 +1,56 @@
 #include <omp.h>
 #include <bitonic_sort.h>
-#include <error_handling.h>
 
 void swap(double *a, double *b);
-void bitonic_sort_par(int start, int length, double *seq, int flag, int sub_size);
-void bitonic_sort_seq(int start, int length, double *seq, int flag);
+void bitonic_sort_rec(double *seq, int start, int length, int flag);
+void bitonic_merge(double *seq, int start, int length, int flag);
+void bitonic_compare_and_swap(double *seq, int i, int j, int flag);
 
 
 void bitonic_sort(double *seq, int length) {
-    int sub_size, num_threads, i, j, flag;
+    omp_set_max_active_levels(3); // arbitrary level and subject to change
+    int num_threads = omp_get_max_threads();
 
-    num_threads = omp_get_max_threads();
-
-    if (length < num_threads * 2) {
-        app_error("Length of a bitonic sequence must be at least twice the number of threads\n");
-        return;
-    }
-
-    sub_size = length / num_threads;
-
-    // make the sequence bitonic
-    for (i = 2; i <= sub_size; i *= 2) {
-#pragma omp parallel for shared(i, seq) private(j, flag)
-        for (j = 0; j < length; j += i) {
-            if ((j / i) % 2 == 0) {
-                flag = ASCENDING;
-            } else {
-                flag = DESCENDING;
-            }
-            bitonic_sort_seq(j, i, seq, flag);
-        }
-    }
-
-    // sort the sequence
-    for (i = 2; i <= num_threads; i *= 2) {
-        for (j = 0; j < num_threads; j += i) {
-            if ((j / i) % 2 == 0) {
-                flag = ASCENDING;
-            } else {
-                flag = DESCENDING;
-            }
-            bitonic_sort_par(j * sub_size, i * sub_size, seq, flag, sub_size);
-        }
-#pragma omp parallel for shared(j)
-        for (j = 0; j < num_threads; ++j) {
-            if (j < i) {
-                flag = ASCENDING;
-            } else {
-                flag = DESCENDING;
-            }
-            bitonic_sort_seq(j * sub_size, sub_size, seq, flag);
-        }
+#pragma omp parallel num_threads(num_threads)
+    {
+        #pragma omp single // only the master thread executes this
+        bitonic_sort_rec(seq, 0, length, DESCENDING);
     }
 }
 
-void bitonic_sort_par(int start, int length, double *seq, int flag, int sub_size) {
-    int i, split_length;
-
-    if (length == 1) {
-        return;
-    }
-
-    if (length % 2 != 0) {
-        app_error("Length of a bitonic sequence must be a power of 2\n");
-        exit(1);
-    }
-
-    split_length = length / 2;
-
-#pragma omp parallel for shared(seq, flag, start, split_length) private(i)
-    for (i = start; i < start + split_length; ++i) {
-        if (flag == ASCENDING) {
-            if (seq[i] > seq[i + split_length]) {
-                swap(&seq[i], &seq[i + split_length]);
-            }
-        } else {
-            if (seq[i] < seq[i + split_length]) {
-                swap(&seq[i], &seq[i + split_length]);
-            }
+void bitonic_sort_rec(double *seq, int start, int length, int flag) {
+    if (length > 1)  {
+        int k = length / 2;
+#pragma omp parallel sections
+        {
+#pragma omp section
+            bitonic_sort_rec(seq, start, k, flag);
+#pragma omp section
+            bitonic_sort_rec(seq, start + k, k, flag == ASCENDING ? DESCENDING : ASCENDING);
         }
-    }
 
-    if (split_length > sub_size) {
-        bitonic_sort_par(start, split_length, seq, flag, sub_size);
-        bitonic_sort_par(start + split_length, split_length, seq, flag, sub_size);
+        bitonic_merge(seq, start, length, flag);
     }
-
 }
 
-void bitonic_sort_seq(int start, int length, double *seq, int flag) {
-    int i, split_length;
+void bitonic_merge(double *seq, int start, int length, int flag) {
+    if (length > 1) {
+        int k = length / 2;
 
-    if (length == 1) {
-        return;
-    }
-
-    if (length % 2 != 0) {
-        app_error("Length of a bitonic sequence must be a power of 2\n");
-        exit(1);
-    }
-
-    split_length = length / 2;
-
-    for (i = start; i < start + split_length; ++i) {
-        if (flag == ASCENDING) {
-            if (seq[i] > seq[i + split_length]) {
-                swap(&seq[i], &seq[i + split_length]);
-            }
-        } else {
-            if (seq[i] < seq[i + split_length]) {
-                swap(&seq[i], &seq[i + split_length]);
-            }
+        for (int i = start; i < start + k; ++i) {
+            bitonic_compare_and_swap(seq, i, i + k, flag);
         }
+
+        bitonic_merge(seq, start, k, flag);
+        bitonic_merge(seq, start + k, k, flag);
     }
+}
 
-    bitonic_sort_seq(start, split_length, seq, flag);
-    bitonic_sort_seq(start + split_length, split_length, seq, flag);
-
+void bitonic_compare_and_swap(double *seq, int i, int j, int flag) {
+    if ((flag == ASCENDING && seq[i] > seq[j]) ||
+        (flag == DESCENDING && seq[i] < seq[j])) {
+        swap(&seq[i], &seq[j]);
+    }
 }
 
 void swap(double *a, double *b) {
