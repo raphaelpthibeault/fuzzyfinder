@@ -27,6 +27,8 @@ add_executable(fuzzyfinder
         test.c
         fuzzysearch/damarau_levenshtein.c
         fuzzysearch/damarau_levenshtein.h
+        fuzzysearch/fuzzy.c
+        fuzzysearch/fuzzy.h
 )
 
 # I think fuzzy search should be a lib
