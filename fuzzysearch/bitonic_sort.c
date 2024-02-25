@@ -1,26 +1,25 @@
 #include <omp.h>
 #include <bitonic_sort.h>
 
-void swap(double *a, double *b);
-void bitonic_sort_rec(double *seq, int start, int length, int flag);
-void bitonic_merge(double *seq, int start, int length, int flag);
-void bitonic_compare_and_swap(double *seq, int i, int j, int flag);
+void bitonic_sort_rec(StringScore *seq, ulong start, ulong length, int flag);
+void bitonic_merge(StringScore *seq, ulong start, ulong length, int flag);
+void bitonic_compare_and_swap(StringScore *seq, ulong i, ulong j, int flag);
+void swap(StringScore *a, StringScore *b);
 
-
-void bitonic_sort(double *seq, int length) {
-    omp_set_max_active_levels(3); // arbitrary level and subject to change
+void bitonic_sort(StringScore *seq, ulong length) {
+    omp_set_max_active_levels(3); // Arbitrary level and subject to change
     int num_threads = omp_get_max_threads();
 
 #pragma omp parallel num_threads(num_threads)
     {
-        #pragma omp single // only the master thread executes this
+#pragma omp single // only the master thread executes this
         bitonic_sort_rec(seq, 0, length, DESCENDING);
     }
 }
 
-void bitonic_sort_rec(double *seq, int start, int length, int flag) {
-    if (length > 1)  {
-        int k = length / 2;
+void bitonic_sort_rec(StringScore *seq, ulong start, ulong length, int flag) {
+    if (length > 1) {
+        ulong k = length / 2;
 #pragma omp parallel sections
         {
 #pragma omp section
@@ -33,11 +32,11 @@ void bitonic_sort_rec(double *seq, int start, int length, int flag) {
     }
 }
 
-void bitonic_merge(double *seq, int start, int length, int flag) {
+void bitonic_merge(StringScore *seq, ulong start, ulong length, int flag) {
     if (length > 1) {
-        int k = length / 2;
+        ulong k = length / 2;
 
-        for (int i = start; i < start + k; ++i) {
+        for (ulong i = start; i < start + k; ++i) {
             bitonic_compare_and_swap(seq, i, i + k, flag);
         }
 
@@ -46,15 +45,16 @@ void bitonic_merge(double *seq, int start, int length, int flag) {
     }
 }
 
-void bitonic_compare_and_swap(double *seq, int i, int j, int flag) {
-    if ((flag == ASCENDING && seq[i] > seq[j]) ||
-        (flag == DESCENDING && seq[i] < seq[j])) {
+void bitonic_compare_and_swap(StringScore *seq, ulong i, ulong j, int flag) {
+    if ((flag == ASCENDING && seq[i].score > seq[j].score) ||
+        (flag == DESCENDING && seq[i].score < seq[j].score)) {
         swap(&seq[i], &seq[j]);
     }
 }
 
-void swap(double *a, double *b) {
-    double temp = *a;
+void swap(StringScore *a, StringScore *b) {
+    StringScore temp = *a;
     *a = *b;
     *b = temp;
 }
+

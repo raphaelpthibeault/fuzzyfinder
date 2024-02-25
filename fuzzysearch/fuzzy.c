@@ -1,11 +1,7 @@
 #include <fuzzy.h>
 #include <wrapper.h>
 #include <string.h>
-
-int compare_similarity(const void *a, const void *b) {
-    double diff = ((StringScore *)b)->score - ((StringScore *)a)->score;
-    return (diff > 0) ? 1 : (diff < 0) ? -1 : 0;
-}
+#include <bitonic_sort.h>
 
 StringScore *fuzzy_search(const char *query, const char **list, size_t list_len, size_t *result_len,
                           int transposition_cost, int substitution_cost, int insertion_cost, int deletion_cost,
@@ -31,7 +27,7 @@ StringScore *fuzzy_search(const char *query, const char **list, size_t list_len,
     memcpy(result, temp_result, count * sizeof(StringScore));
     FREE_AND_NULL(temp_result);
 
-    qsort(result, *result_len, sizeof(StringScore), compare_similarity);
+    bitonic_sort(result, *result_len);
 
     return result;
 }

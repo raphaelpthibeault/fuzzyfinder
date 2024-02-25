@@ -12,6 +12,11 @@
 
 #define ulong unsigned long
 
+typedef struct {
+    char *str;
+    double score;
+} StringScore;
+
 static inline bool will_mult_overflow(size_t a, size_t b) {
     return a > ULONG_MAX / b;
 }
