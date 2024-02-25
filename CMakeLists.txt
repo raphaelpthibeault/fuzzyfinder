@@ -3,13 +3,7 @@ project(fuzzyfinder)
 
 set(CMAKE_C_STANDARD 11)
 
-enable_testing()
-find_package(GTest REQUIRED)
-
-# add executables for tests 
-# add_executable ...
-# target_include_directories
-# target_link_directories
+find_package(OpenMP REQUIRED)
 
 include_directories(
         fuzzyfinder
@@ -17,7 +11,6 @@ include_directories(
         util
 )
 
-# add_executable main project
 add_executable(fuzzyfinder
         util/util.h
         util/error_handling.c
@@ -29,7 +22,9 @@ add_executable(fuzzyfinder
         fuzzysearch/damarau_levenshtein.h
         fuzzysearch/fuzzy.c
         fuzzysearch/fuzzy.h
+        fuzzysearch/bitonic_sort.c
+        fuzzysearch/bitonic_sort.h
 )
 
-# I think fuzzy search should be a lib
-
+target_include_directories(fuzzyfinder PUBLIC ${OpenMP_CXX_INCLUDE_DIRS})
+target_link_libraries(fuzzyfinder PUBLIC OpenMP::OpenMP_CXX)
