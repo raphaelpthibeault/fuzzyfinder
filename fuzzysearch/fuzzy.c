@@ -3,6 +3,20 @@
 #include <string.h>
 #include <bitonic_sort.h>
 
+ulong next_power_of_2(ulong n) {
+    if (n == 0) {
+        return 1;
+    }
+    --n;
+    n |= n >> 1;
+    n |= n >> 2;
+    n |= n >> 4;
+    n |= n >> 8;
+    n |= n >> 16;
+    n |= n >> 32; // Assuming a 64-bit architecture
+    return n + 1;
+}
+
 StringScore *fuzzy_search(const char *query, const char **list, size_t list_len, size_t *result_len,
                           int transposition_cost, int substitution_cost, int insertion_cost, int deletion_cost,
                           double threshold) {
@@ -21,13 +35,18 @@ StringScore *fuzzy_search(const char *query, const char **list, size_t list_len,
         }
     }
 
+
+    ulong padded_length = next_power_of_2(count);
+    StringScore *result = Realloc(temp_result, st_mult(padded_length, sizeof(StringScore)));
+    for (ulong i = count; i < padded_length; ++i) {
+        result[i].str = NULL;
+        result[i].score = -1; // similar to negative infinity since scores are between 0 and 1
+    }
+
+    bitonic_sort(result, padded_length);
+
+    result = Realloc(result, st_mult(count, sizeof(StringScore))); // -1's should all be at the end
+
     *result_len = count;
-    StringScore *result;
-    ALLOC_ARRAY(result, count);
-    memcpy(result, temp_result, count * sizeof(StringScore));
-    FREE_AND_NULL(temp_result);
-
-    bitonic_sort(result, *result_len);
-
     return result;
 }

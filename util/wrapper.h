@@ -5,6 +5,7 @@
 
 void *Malloc(size_t size);
 void *Alloc_array(void **ptr, size_t size, size_t elem_size);
+void *Realloc(void *ptr, size_t size);
 
 #define ALLOC_ARRAY(ptr, count) Alloc_array((void **)&(ptr), (count), sizeof(*(ptr)))
 #define FREE_AND_NULL(p) do { free(p); (p) = NULL; } while (0)
