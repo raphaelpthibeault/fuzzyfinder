@@ -19,7 +19,7 @@ ulong next_power_of_2(ulong n) {
     return n + 1;
 }
 
-StringScore *fuzzy_search(const char *query, const char **list, size_t list_len, size_t *result_len,
+char **fuzzy_search(const char *query, const char **list, size_t list_len, size_t *result_len,
                           int transposition_cost, int substitution_cost, int insertion_cost, int deletion_cost,
                           double threshold) {
     StringScore *temp_result;
@@ -55,8 +55,14 @@ StringScore *fuzzy_search(const char *query, const char **list, size_t list_len,
 
     bitonic_sort(result, padded_length);
 
-    result = Realloc(result, st_mult(count, sizeof(StringScore))); // -1's should all be at the end
+    char **ret;
+    ALLOC_ARRAY(ret, count);
+    for (ulong i = 0; i < count; ++i) {
+        ret[i] = result[i].str;
+    }
 
     *result_len = count;
-    return result;
+    FREE_AND_NULL(result);
+
+    return ret;
 }
