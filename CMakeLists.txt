@@ -17,7 +17,6 @@ add_executable(fuzzyfinder
         util/error_handling.h
         util/wrapper.c
         util/wrapper.h
-        test.c
         fuzzysearch/damarau_levenshtein.c
         fuzzysearch/damarau_levenshtein.h
         fuzzysearch/fuzzy.c
